@@ -26,7 +26,6 @@ INSTALLED_APPS = [
 
     "accounts",
     "customers",
-    "dashboard",
 ]
 
 MIDDLEWARE = [
@@ -44,7 +43,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -97,12 +96,15 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "Asia/Kolkata"
 
 USE_I18N = True
 
 USE_TZ = True
 
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/maker/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'

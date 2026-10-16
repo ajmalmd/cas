@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Add Customer | Customer Approval
+{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-3xl">
+    <a href="{% url 'maker_dashboard' %}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600"><span aria-hidden="true">&larr;</span> Back to my customers</a>
+
+    <section class="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-200 bg-slate-900 px-6 py-7 text-white sm:px-8">
+        <p class="text-xs font-semibold tracking-widest text-indigo-300">CUSTOMER INTAKE</p>
+        <h1 class="mt-2 text-2xl font-bold sm:text-3xl">Add a customer</h1>
+        <p class="mt-2 text-sm leading-6 text-slate-300">Enter the customer's details and attach the required documents for review.</p>
+      </div>
+
+      <div class="p-6 sm:p-8">
+        <div class="mb-6 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+          <p class="text-sm font-semibold text-indigo-900">Before submitting</p>
+          <p class="mt-1 text-sm leading-6 text-indigo-800">Check that the details are accurate and that the photo and resume belong to this customer. The submission will start with Pending status.</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="rounded-lg bg-red-50 p-3 text-sm text-red-700">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div>
+            <label for="{{ form.full_name.id_for_label }}">Full name</label>
+            {{ form.full_name }}
+            {{ form.full_name.errors }}
+          </div>
+
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label for="{{ form.email.id_for_label }}">Email address</label>
+              {{ form.email }}
+              {{ form.email.errors }}
+            </div>
+            <div>
+              <label for="{{ form.phone.id_for_label }}">Phone number</label>
+              {{ form.phone }}
+              {{ form.phone.errors }}
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 p-4 sm:p-5">
+            <h2 class="font-semibold text-slate-900">Customer documents</h2>
+            <p class="mt-1 text-sm text-slate-500">Select the required photo and resume files.</p>
+
+            <div class="mt-5 space-y-5">
+              <div>
+                <label for="{{ form.photo.id_for_label }}">Customer photo</label>
+                {{ form.photo }}
+                <p class="mt-1 text-xs text-slate-500">JPG, PNG, or WebP. Maximum 5 MB.</p>
+                {{ form.photo.errors }}
+              </div>
+
+              <div>
+                <label for="{{ form.resume.id_for_label }}">Resume</label>
+                {{ form.resume }}
+                <p class="mt-1 text-xs text-slate-500">PDF or Word document. Maximum 10 MB.</p>
+                {{ form.resume.errors }}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+            <a href="{% url 'maker_dashboard' %}" class="inline-flex justify-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</a>
+            <button type="submit" class="inline-flex justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100">Submit for review</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+{% endblock %}

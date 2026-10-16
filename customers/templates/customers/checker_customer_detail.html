@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}
+  Review {{ customer.full_name }} | CAS
+{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-4xl space-y-6">
+    <a href="{% url 'checker_dashboard' %}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">← Back to review queue</a>
+
+    <section class="rounded-2xl border bg-white p-5 shadow-sm sm:p-8">
+      <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div>
+          <p class="text-xs font-semibold tracking-wider text-indigo-600">CUSTOMER REVIEW</p>
+          <h1 class="mt-2 break-words text-3xl font-bold text-slate-900">{{ customer.full_name }}</h1>
+          <p class="mt-2 text-sm text-slate-500">Submitted by {{ customer.uploaded_by.username }}</p>
+        </div>
+        {% if customer.status == 'PENDING' %}
+          <span class="w-fit rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">Pending</span>
+        {% elif customer.status == 'APPROVED' %}
+          <span class="w-fit rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800">Approved</span>
+        {% else %}
+          <span class="w-fit rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">Declined</span>
+        {% endif %}
+      </div>
+
+      <hr class="my-7" />
+
+      <h2 class="font-bold">Customer information</h2>
+      <dl class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div>
+          <dt class="text-sm text-slate-500">Email</dt><dd class="mt-1 break-all font-medium">{{ customer.email }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-slate-500">Phone</dt><dd class="mt-1 font-medium">{{ customer.phone }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-slate-500">Maker</dt><dd class="mt-1 font-medium">{{ customer.uploaded_by.username }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-slate-500">Submitted</dt><dd class="mt-1 font-medium">{{ customer.created_at|date:'M d, Y, P' }}</dd>
+        </div>
+      </dl>
+
+      <hr class="my-7" />
+
+      <div class="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+        <h2 class="text-lg font-semibold text-gray-900">Uploaded Documents</h2>
+
+        <div class="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <!-- Customer Photo -->
+          <div>
+            <h3 class="mb-3 text-sm font-medium text-gray-700">Customer Photo</h3>
+
+            {% if customer.photo %}
+              <a href="{% url 'customer_file' customer_id=customer.pk file_type='photo' %}" target="_blank" rel="noopener noreferrer"><img src="{% url 'customer_file' customer_id=customer.pk file_type='photo' %}" alt="Photo of {{ customer.full_name }}" class="h-56 w-56 rounded-lg border border-gray-200 object-cover" /></a>
+            {% else %}
+              <p class="text-sm text-gray-500">No photo uploaded.</p>
+            {% endif %}
+          </div>
+
+          <!-- Customer Resume -->
+          <div>
+            <h3 class="mb-3 text-sm font-medium text-gray-700">Resume</h3>
+
+            {% if customer.resume %}
+              <a href="{% url 'customer_file' customer_id=customer.pk file_type='resume' %}" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">View / Download Resume</a>
+            {% else %}
+              <p class="text-sm text-gray-500">No resume uploaded.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <hr class="my-7" />
+
+      <h2 class="font-bold">Decision history</h2>
+      {% if customer.reviewed_by %}
+        <p class="mt-3 text-sm text-slate-600">
+          Reviewed by <strong>{{ customer.reviewed_by.username }}</strong>
+          on {{ customer.reviewed_at|date:'M d, Y, P' }}.
+        </p>
+      {% else %}
+        <p class="mt-3 text-sm text-slate-500">No decision has been recorded yet.</p>
+      {% endif %}
+
+      {% if customer.status == 'PENDING' %}
+        <div class="mt-7 flex flex-col gap-3 border-t border-slate-100 pt-6 sm:flex-row">
+          <button type="button" class="open-review-modal rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700" data-action="{% url 'review_customer' customer_id=customer.pk %}" data-customer="{{ customer.full_name }}" data-decision="APPROVED">Approve customer</button>
+          <button type="button" class="open-review-modal rounded-xl border border-red-200 px-5 py-3 text-sm font-semibold text-red-700 hover:bg-red-50" data-action="{% url 'review_customer' customer_id=customer.pk %}" data-customer="{{ customer.full_name }}" data-decision="DECLINED">Decline customer</button>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div id="review-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-xs font-bold tracking-wider text-indigo-600">CONFIRM DECISION</p>
+          <h2 id="review-modal-title" class="mt-2 text-xl font-bold text-slate-900">Review customer</h2>
+        </div>
+        <button id="close-review-modal" type="button" class="rounded-lg p-2 text-2xl text-slate-400 hover:bg-slate-100" aria-label="Close dialog">&times;</button>
+      </div>
+      <p id="review-modal-message" class="mt-4 text-sm leading-6 text-slate-600"></p>
+      <form id="review-modal-form" method="post" class="mt-6 space-y-3">
+        {% csrf_token %}
+        <input id="review-decision" type="hidden" name="decision" value="APPROVED" />
+        <button id="confirm-review-button" type="submit" class="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700">Confirm approval</button>
+        <button id="decline-review-button" type="button" class="w-full rounded-xl border border-red-200 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50">Decline instead</button>
+        <button id="cancel-review-modal" type="button" class="w-full rounded-xl px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50">Cancel</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

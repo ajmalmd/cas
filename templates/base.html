@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>
+      {% block title %}
+        Customer Verification System
+      {% endblock %}
+    </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <style>
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      
+      input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+      select,
+      textarea {
+        width: 100%;
+        margin-top: 0.375rem;
+        padding: 0.7rem 0.85rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.65rem;
+        background: white;
+        color: #0f172a;
+        outline: none;
+      }
+      
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgb(99 102 241 / 15%);
+      }
+      
+      input[type='file'] {
+        padding: 0.6rem;
+        background: #f8fafc;
+      }
+      
+      label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #334155;
+      }
+      
+      .helptext {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+      
+      .errorlist {
+        margin-top: 0.25rem;
+        color: #dc2626;
+        font-size: 0.875rem;
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+    <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+        <a href="/" class="flex items-center gap-3">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">C</span>
+          <span>
+            <span class="block text-sm font-bold tracking-tight text-slate-900 sm:text-base">CVMS</span>
+            <span class="hidden text-xs text-slate-500 sm:block">Customer management portal</span>
+          </span>
+        </a>
+
+        {% if request.user.is_authenticated %}
+          <button id="mobile-menu-button" type="button" class="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100 md:hidden" aria-label="Toggle navigation" aria-expanded="false" aria-controls="mobile-menu">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        {% endif %}
+
+        <nav class="hidden items-center gap-4 md:flex">
+          {% if request.user.is_authenticated %}
+            <span class="max-w-48 truncate text-sm text-slate-600">{{ request.user.username }}</span>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Sign out</button>
+            </form>
+          {% else %}
+            {% if request.resolver_match.url_name != 'login' %}
+              <a href="{% url 'login' %}" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Sign in</a>
+            {% endif %}
+          {% endif %}
+        </nav>
+      </div>
+
+      {% if request.user.is_authenticated %}
+        <div id="mobile-menu" class="hidden border-t border-slate-200 bg-white px-4 py-4 md:hidden">
+          <p class="mb-3 truncate text-sm text-slate-600">
+            Signed in as <strong>{{ request.user.username }}</strong>
+          </p>
+
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-left text-sm font-semibold">Sign out</button>
+          </form>
+        </div>
+      {% endif %}
+    </header>
+
+    <main class="mx-auto min-h-[calc(100vh-150px)] max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      {% if messages %}
+        <div id="flash-messages" class="mb-6 space-y-3">
+          {% for message in messages %}
+            <div class="flash-message flex items-start justify-between gap-4 rounded-xl border px-4 py-3 text-sm
+            {% if message.tags == 'success' %}
+              border-emerald-200 bg-emerald-50 text-emerald-800
+            {% elif message.tags == 'error' %}
+              border-red-200 bg-red-50 text-red-800
+            {% else %}
+              border-indigo-200 bg-indigo-50 text-indigo-800
+            {% endif %}">
+              <p>{{ message }}</p>
+              <button type="button" class="dismiss-message font-bold" aria-label="Dismiss message">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}
+
+      {% endblock %}
+    </main>
+
+    <footer class="border-t border-slate-200 bg-white">
+      <div class="mx-auto max-w-7xl px-4 py-5 text-center text-xs text-slate-500 sm:px-6 lg:px-8">Customer Verification System</div>
+    </footer>
+
+    <script>
+      $(function () {
+        $('#mobile-menu-button').on('click', function () {
+          const expanded = $(this).attr('aria-expanded') === 'true'
+          $('#mobile-menu').toggleClass('hidden')
+          $(this).attr('aria-expanded', String(!expanded))
+        })
+      
+        $('.dismiss-message').on('click', function () {
+          $(this)
+            .closest('.flash-message')
+            .fadeOut(150, function () {
+              $(this).remove()
+            })
+        })
+      
+        let activeDecision = 'APPROVED'
+      
+        function setDecision(decision) {
+          activeDecision = decision
+          $('#review-decision').val(decision)
+      
+          if (decision === 'APPROVED') {
+            $('#review-modal-title').text('Approve customer?')
+            $('#review-modal-message').text('Are you sure you want to approve this customer? This decision will be recorded.')
+            $('#confirm-review-button').text('Confirm approval').removeClass('bg-red-600 hover:bg-red-700').addClass('bg-emerald-600 hover:bg-emerald-700')
+            $('#decline-review-button').show()
+          } else {
+            $('#review-modal-title').text('Decline customer?')
+            $('#review-modal-message').text('Are you sure you want to decline this customer? This decision will be recorded.')
+            $('#confirm-review-button').text('Confirm decline').removeClass('bg-emerald-600 hover:bg-emerald-700').addClass('bg-red-600 hover:bg-red-700')
+            $('#decline-review-button').hide()
+          }
+        }
+      
+        $('.open-review-modal').on('click', function () {
+          const action = $(this).attr('data-action')
+          const customer = $(this).attr('data-customer')
+      
+          $('#review-modal-form').attr('action', action)
+          $('#review-modal-message').text('Review the submission for ' + customer + '.')
+      
+          setDecision($(this).attr('data-decision') || 'APPROVED')
+      
+          $('#review-modal').removeClass('hidden').addClass('flex')
+      
+          $('#cancel-review-modal').trigger('focus')
+        })
+      
+        $('#decline-review-button').on('click', function () {
+          setDecision('DECLINED')
+        })
+      
+        function closeReviewModal() {
+          $('#review-modal').addClass('hidden').removeClass('flex')
+        }
+      
+        $('#close-review-modal, #cancel-review-modal').on('click', closeReviewModal)
+      
+        $('#review-modal').on('click', function (event) {
+          if (event.target === this) {
+            closeReviewModal()
+          }
+        })
+      
+        $(document).on('keydown', function (event) {
+          if (event.key === 'Escape') {
+            closeReviewModal()
+          }
+        })
+      })
+    </script>
+  </body>
+</html>
