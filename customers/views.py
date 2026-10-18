@@ -1,11 +1,14 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import FileResponse, Http404
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 import mimetypes
 
 from django.contrib.auth import get_user_model
@@ -312,3 +315,29 @@ def review_customer(request, customer_id):
     )
 
     return redirect("checker_customer_detail", customer_id=customer.pk)
+
+
+@staff_member_required
+def media_diagnostic(request):
+    results = []
+
+    for customer in Customer.objects.all():
+        item = {
+            "customer_id": str(customer.pk),
+            "photo_name": customer.photo.name if customer.photo else None,
+            "resume_name": customer.resume.name if customer.resume else None,
+            "photo_exists": (
+                customer.photo.storage.exists(customer.photo.name)
+                if customer.photo else False
+            ),
+            "resume_exists": (
+                customer.resume.storage.exists(customer.resume.name)
+                if customer.resume else False
+            ),
+        }
+        results.append(item)
+
+    return JsonResponse({
+        "media_root": str(settings.MEDIA_ROOT),
+        "customers": results,
+    })

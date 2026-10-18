@@ -32,4 +32,9 @@ urlpatterns = [
         views.review_customer,
         name="review_customer",
     ),
+    path(
+        "admin-tools/media-diagnostic/",
+        views.media_diagnostic,
+        name="media_diagnostic",
+    ),
 ]
