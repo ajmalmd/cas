@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "django_mongodb_backend",
+    "storages",
 
     "accounts",
     "customers",
@@ -124,7 +125,19 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": os.getenv("R2_BUCKET_NAME"),
+            "endpoint_url": (
+                f"https://{os.getenv('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com"
+            ),
+            "access_key": os.getenv("R2_ACCESS_KEY_ID"),
+            "secret_key": os.getenv("R2_SECRET_ACCESS_KEY"),
+            "region_name": "auto",
+            "signature_version": "s3v4",
+            "querystring_auth": True,
+            "file_overwrite": False,
+        },
     },
     "staticfiles": {
         "BACKEND": (
