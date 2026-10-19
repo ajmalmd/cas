@@ -1,20 +1,24 @@
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.admin.views.decorators import staff_member_required
 from django.http import FileResponse, Http404
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
 import mimetypes
 
 from django.contrib.auth import get_user_model
 from accounts.models import UserProfile
 from .models import Customer
 from .forms import CustomerCreateForm
+
+
+import shutil
+from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST, require_GET
 
 
 
@@ -318,26 +322,61 @@ def review_customer(request, customer_id):
 
 
 @staff_member_required
-def media_diagnostic(request):
-    results = []
+@require_POST
+def clear_local_media(request):
+    media_root = settings.MEDIA_ROOT.resolve()
 
-    for customer in Customer.objects.all():
-        item = {
-            "customer_id": str(customer.pk),
-            "photo_name": customer.photo.name if customer.photo else None,
-            "resume_name": customer.resume.name if customer.resume else None,
-            "photo_exists": (
-                customer.photo.storage.exists(customer.photo.name)
-                if customer.photo else False
-            ),
-            "resume_exists": (
-                customer.resume.storage.exists(customer.resume.name)
-                if customer.resume else False
-            ),
-        }
-        results.append(item)
+    # Safety check: only allow clearing the configured media directory.
+    if media_root == media_root.parent or not media_root.exists():
+        return JsonResponse(
+            {"error": "Media directory not found or invalid."},
+            status=400,
+        )
+
+    deleted_files = 0
+
+    for path in media_root.iterdir():
+        if path.is_dir() and not path.is_symlink():
+            deleted_files += sum(
+                1 for item in path.rglob("*") if item.is_file()
+            )
+            shutil.rmtree(path)
+        elif path.is_file() or path.is_symlink():
+            path.unlink()
+            deleted_files += 1
 
     return JsonResponse({
-        "media_root": str(settings.MEDIA_ROOT),
-        "customers": results,
+        "message": "Local media cleanup completed.",
+        "deleted_files": deleted_files,
+        "media_root": str(media_root),
+    })
+
+
+@staff_member_required
+@require_GET
+def list_local_media(request):
+    media_root = settings.MEDIA_ROOT.resolve()
+
+    if not media_root.exists() or not media_root.is_dir():
+        return JsonResponse({
+            "media_root": str(media_root),
+            "total_files": 0,
+            "files": [],
+            "message": "Media directory does not exist.",
+        })
+
+    files = []
+
+    for path in media_root.rglob("*"):
+        if path.is_file() and not path.is_symlink():
+            files.append({
+                "name": path.name,
+                "relative_path": path.relative_to(media_root).as_posix(),
+                "size_bytes": path.stat().st_size,
+            })
+
+    return JsonResponse({
+        "media_root": str(media_root),
+        "total_files": len(files),
+        "files": files,
     })

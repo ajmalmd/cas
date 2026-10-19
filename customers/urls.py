@@ -32,9 +32,16 @@ urlpatterns = [
         views.review_customer,
         name="review_customer",
     ),
+    
     path(
-        "admin-tools/media-diagnostic/",
-        views.media_diagnostic,
-        name="media_diagnostic",
+        "admin-tools/clear-local-media/",
+        views.clear_local_media,
+        name="clear_local_media",
+    ),
+    
+    path(
+        "admin-tools/list-media/",
+        views.list_local_media,
+        name="list_local_media",
     ),
 ]
